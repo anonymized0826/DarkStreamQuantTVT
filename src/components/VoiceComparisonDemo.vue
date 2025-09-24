@@ -22,6 +22,14 @@
                                 </select>
                                 <div class="d-flex justify-content-between text-black-50">
                                     <div class="text-center">
+                                        <div class="fw-bold text-black">{{ modelInfos[leftModel].nisqa_mos }}</div>
+                                        <small>NISQA-MOS</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="fw-bold text-black">{{ modelInfos[leftModel].wer }}</div>
+                                        <small>WER</small>
+                                    </div>
+                                    <div class="text-center">
                                         <div class="fw-bold text-black">{{ modelInfos[leftModel].latency }}</div>
                                         <small>Latency</small>
                                     </div>
@@ -42,6 +50,14 @@
                                     </option>
                                 </select>
                                 <div class="d-flex justify-content-between text-black-50">
+                                    <div class="text-center">
+                                        <div class="fw-bold text-black">{{ modelInfos[rightModel].nisqa_mos }}</div>
+                                        <small>NISQA-MOS</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="fw-bold text-black">{{ modelInfos[rightModel].wer }}</div>
+                                        <small>WER</small>
+                                    </div>
                                     <div class="text-center">
                                         <div class="fw-bold text-black">{{ modelInfos[rightModel].latency }}</div>
                                         <small>Latency</small>
@@ -68,7 +84,7 @@
                             <option v-for="(target, idx) in demoTargets" :key="idx" :value="idx">{{ target.name }}
                             </option>
                         </select>
-                        <div v-if="selectedTarget !== null" class="text-center">
+                        <div v-if="selectedTarget !== null && demoTargets[selectedTarget]" class="text-center">
                             <audio :src="demoTargets[selectedTarget].url" controls class="w-100"></audio>
                         </div>
                     </div>
@@ -76,8 +92,16 @@
             </div>
 
 
+            <!-- Loading State -->
+            <div v-if="isLoading" class="text-center py-5">
+                <div class="spinner-border text-dark" role="status">
+                    <span class="visually-hidden">Loading audio files...</span>
+                </div>
+                <p class="mt-3 text-muted">Loading audio files...</p>
+            </div>
+
             <!-- Comparison Results for Selected Target - Two Tables Side by Side -->
-            <div v-if="selectedTarget !== null" class="row">
+            <div v-else-if="selectedTarget !== null && demoSources.length > 0 && demoTargets.length > 0" class="row">
                 <!-- First Table - First Half of Sources -->
                 <div class="col-lg-6">
                     <div class="table-responsive">
@@ -207,46 +231,39 @@ const getAssetUrl = (path) => {
 }
 
 const availableModels = [
-    'DarkStream-v2-logits',
-    'DarkStream-bottleneck-tvtimbre',
-    'DarkStream-bottleneckvq-tvtimbre',
+    'slt24',
+    'DarkStream',
+    'DarkStream-quant-TVT',
     'GenVC-small',
-    'GenVC-large',
-    'GenVC-small-nonstreaming',
-    'GenVC-large-nonstreaming'
 ]
 const modelInfos = {
-    'DarkStream-v2-logits': {
-        latency: 'TODO',
-        rtf: 'TODO',
+    'slt24': {
+        nisqa_mos: '-',
+        wer: '5.70%',
+        latency: '86.49',
+        rtf: '0.44',
     },
-    'DarkStream-bottleneck-tvtimbre': {
-        latency: 'TODO',
-        rtf: 'TODO',
+    'DarkStream': {
+        nisqa_mos: '-',
+        wer: '10.80%',
+        latency: '79.76',
+        rtf: '0.33',
     },
-    'DarkStream-bottleneckvq-tvtimbre': {
-        latency: 'TODO',
-        rtf: 'TODO',
+    'DarkStream-quant-TVT': {
+        nisqa_mos: '-',
+        wer: '5.35%',
+        latency: '78.03',
+        rtf: '0.30',
     },
     'GenVC-small': {
-        latency: '0.29 ± 0.03',
-        rtf: '0.83 ± 0.05',
-    },
-    'GenVC-large': {
-        latency: '0.32 ± 0.11',
-        rtf: '0.83 ± 0.07',
-    },
-    'GenVC-small-nonstreaming': {
-        latency: 'None',
-        rtf: 'None',
-    },
-    'GenVC-large-nonstreaming': {
-        latency: 'None',
-        rtf: 'None',
+        nisqa_mos: '-',
+        wer: '8.20%',
+        latency: '-',
+        rtf: '-',
     },
 }
 
-const leftModel = ref('DarkStream-v2-logits')
+const leftModel = ref('DarkStream-quant-TVT')
 const rightModel = ref('GenVC-small')
 
 // Target selection
@@ -255,23 +272,81 @@ const selectedTarget = ref(0) // Default to first target
 // Demo mode data
 const demoResults = ref({}) // Store results for each target-source combination
 const isProcessing = ref(false)
+const isLoading = ref(true) // Loading state for audio files
 
-// Demo audio files - organized structure
-const demoSources = ref([
-    { name: 'RRBI_arctic_a0055', url: getAssetUrl('/audio/demo/sources/RRBI_arctic_a0055.wav') },
-    { name: 'TNI_arctic_a0356', url: getAssetUrl('/audio/demo/sources/TNI_arctic_a0356.wav') },
-    { name: 'BDL_arctic_a0406', url: getAssetUrl('/audio/demo/sources/BDL_arctic_a0406.wav') },
-    { name: 'MBMPS_arctic_b0244', url: getAssetUrl('/audio/demo/sources/MBMPS_arctic_b0244.wav') },
-    { name: 'CLB_arctic_b0322', url: getAssetUrl('/audio/demo/sources/CLB_arctic_b0322.wav') }
-])
+// Demo audio files - automatically loaded
+const demoSources = ref([])
+const demoTargets = ref([])
+const demoDir = ref('audio/demo2')
 
-const demoTargets = ref([
-    { name: 'ERMS_arctic_a0113', url: getAssetUrl('/audio/demo/targets/ERMS_arctic_a0113.wav') },
-    { name: 'ASI_arctic_a0292', url: getAssetUrl('/audio/demo/targets/ASI_arctic_a0292.wav') },
-    { name: 'SLT_arctic_a0334', url: getAssetUrl('/audio/demo/targets/SLT_arctic_a0334.wav') },
-    { name: 'SVBI_arctic_a0508', url: getAssetUrl('/audio/demo/targets/SVBI_arctic_a0508.wav') },
-    { name: 'NJS_arctic_b0170', url: getAssetUrl('/audio/demo/targets/NJS_arctic_b0170.wav') }
-])
+// Function to dynamically discover audio files from a directory
+const loadAudioFiles = async (directory) => {
+    const files = []
+
+    try {
+        // Use import.meta.glob to dynamically import all .wav files from the directory
+        const audioModules = import.meta.glob('/public/audio/demo2/**/*.wav', {
+            eager: false,
+            query: '?url',
+            import: 'default'
+        })
+
+        // Filter files based on the specific directory
+        const directoryPattern = `/public/${demoDir.value}/${directory}/`
+
+        for (const [path] of Object.entries(audioModules)) {
+            if (path.startsWith(directoryPattern)) {
+                const fileName = path.split('/').pop()
+                const name = fileName.replace('.wav', '')
+                const url = getAssetUrl(`/${demoDir.value}/${directory}/${fileName}`)
+
+                files.push({ name, url })
+            }
+        }
+
+        // Sort files alphabetically by name
+        files.sort((a, b) => a.name.localeCompare(b.name))
+
+    } catch (error) {
+        console.error(`Error loading files from ${directory}:`, error)
+    }
+
+    return files
+}
+
+// Load audio files on component initialization
+const initializeAudioFiles = async () => {
+    isLoading.value = true
+    try {
+        const [sources, targets] = await Promise.all([
+            loadAudioFiles('sources'),
+            loadAudioFiles('targets')
+        ])
+
+        demoSources.value = sources
+        demoTargets.value = targets
+
+    } catch (error) {
+        console.error('Error loading audio files:', error)
+        // Fallback to hardcoded files if auto-loading fails
+        demoSources.value = [
+            { name: 'RRBI_arctic_a0055', url: getAssetUrl('/audio/demo/sources/RRBI_arctic_a0055.wav') },
+            { name: 'TNI_arctic_a0356', url: getAssetUrl('/audio/demo/sources/TNI_arctic_a0356.wav') },
+            { name: 'BDL_arctic_a0406', url: getAssetUrl('/audio/demo/sources/BDL_arctic_a0406.wav') },
+            { name: 'MBMPS_arctic_b0244', url: getAssetUrl('/audio/demo/sources/MBMPS_arctic_b0244.wav') },
+            { name: 'CLB_arctic_b0322', url: getAssetUrl('/audio/demo/sources/CLB_arctic_b0322.wav') }
+        ]
+        demoTargets.value = [
+            { name: 'ERMS_arctic_a0113', url: getAssetUrl('/audio/demo/targets/ERMS_arctic_a0113.wav') },
+            { name: 'ASI_arctic_a0292', url: getAssetUrl('/audio/demo/targets/ASI_arctic_a0292.wav') },
+            { name: 'SLT_arctic_a0334', url: getAssetUrl('/audio/demo/targets/SLT_arctic_a0334.wav') },
+            { name: 'SVBI_arctic_a0508', url: getAssetUrl('/audio/demo/targets/SVBI_arctic_a0508.wav') },
+            { name: 'NJS_arctic_b0170', url: getAssetUrl('/audio/demo/targets/NJS_arctic_b0170.wav') }
+        ]
+    } finally {
+        isLoading.value = false
+    }
+}
 
 // Computed properties to split sources into two halves
 const firstHalfSources = computed(() => {
@@ -305,10 +380,9 @@ const generateSelectedTargetResults = async () => {
         for (let sIdx = 0; sIdx < demoSources.value.length; sIdx++) {
             const sourceName = demoSources.value[sIdx].url.split('/').pop().replace('.wav', '')
             const targetName = demoTargets.value[targetIdx].url.split('/').pop().replace('.wav', '')
-
             demoResults.value[targetIdx][sIdx] = {
-                left: getAssetUrl(`/audio/demo/results/${leftModel.value}/${targetName}/${sourceName}.wav`),
-                right: getAssetUrl(`/audio/demo/results/${rightModel.value}/${targetName}/${sourceName}.wav`)
+                left: getAssetUrl(`${demoDir.value}/results/${leftModel.value}/${targetName}/${sourceName}.wav`),
+                right: getAssetUrl(`${demoDir.value}/results/${rightModel.value}/${targetName}/${sourceName}.wav`)
             }
         }
 
@@ -322,34 +396,6 @@ const generateSelectedTargetResults = async () => {
     }
 }
 
-// Generate all demo combinations at once
-const generateAllDemoVC = async () => {
-    isProcessing.value = true
-    try {
-        const newResults = {}
-
-        // Generate results for all combinations
-        for (let tIdx = 0; tIdx < demoTargets.value.length; tIdx++) {
-            newResults[tIdx] = {}
-            for (let sIdx = 0; sIdx < demoSources.value.length; sIdx++) {
-                // Get basenames for more readable filenames
-                const sourceName = demoSources.value[sIdx].url.split('/').pop().replace('.wav', '')
-                const targetName = demoTargets.value[tIdx].url.split('/').pop().replace('.wav', '')
-                newResults[tIdx][sIdx] = {
-                    left: getAssetUrl(`/audio/demo/results/${leftModel.value}/${targetName}/${sourceName}.wav`),
-                    right: getAssetUrl(`/audio/demo/results/${rightModel.value}/${targetName}/${sourceName}.wav`)
-                }
-            }
-        }
-
-        demoResults.value = newResults
-
-    } catch (error) {
-        console.error('Batch voice conversion failed:', error)
-    } finally {
-        isProcessing.value = false
-    }
-}
 
 // Watch for model changes and target selection to regenerate demo results
 watch([leftModel, rightModel, selectedTarget], () => {
@@ -358,9 +404,13 @@ watch([leftModel, rightModel, selectedTarget], () => {
     }
 })
 
-// Generate demo results for selected target when component mounts
-onMounted(() => {
-    generateSelectedTargetResults()
+// Initialize component when mounted
+onMounted(async () => {
+    await initializeAudioFiles()
+    // Generate results after files are loaded
+    if (demoSources.value.length > 0 && demoTargets.value.length > 0) {
+        generateSelectedTargetResults()
+    }
 })
 </script>
 
