@@ -233,37 +233,44 @@ const getAssetUrl = (path) => {
 const availableModels = [
     'slt24',
     'DarkStream',
-    'DarkStream-quant-TVT',
+    'TVTSyn-novq',
+    'TVTSyn',
     'GenVC-small',
 ]
 const modelInfos = {
     'slt24': {
-        nisqa_mos: '-',
+        nisqa_mos: '4.02',
         wer: '5.70%',
         latency: '86.49',
         rtf: '0.44',
     },
     'DarkStream': {
-        nisqa_mos: '-',
+        nisqa_mos: '2.66',
         wer: '10.80%',
         latency: '79.76',
         rtf: '0.33',
     },
-    'DarkStream-quant-TVT': {
-        nisqa_mos: '-',
+    'TVTSyn-novq': {
+        nisqa_mos: '3.45',
+        wer: '-',
+        latency: '-',
+        rtf: '-',
+    },
+    'TVTSyn': {
+        nisqa_mos: '3.91',
         wer: '5.35%',
         latency: '78.03',
         rtf: '0.30',
     },
     'GenVC-small': {
-        nisqa_mos: '-',
+        nisqa_mos: '3.60',
         wer: '8.20%',
         latency: '-',
         rtf: '-',
     },
 }
 
-const leftModel = ref('DarkStream-quant-TVT')
+const leftModel = ref('TVTSyn')
 const rightModel = ref('GenVC-small')
 
 // Target selection
